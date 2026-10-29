@@ -202,3 +202,11 @@ internal modules freely. Tests must not import anything else from `src/`.
 | I3-3 Implement announce-link closing (TDD) | software-engineer | done | R63 | announceMessageLink/movedFromValue; announce before closing; S84 fallback; UNIT-24 + UNIT-25 (PBT 200 runs) |
 | I3-4 QA gate | qa-engineer | done | — | **PASS**: clean run 219/219 (84 acceptance S1–S84, 16 security, 112 unit, 7 smoke), R63 covered |
 | I3-5 Redeploy vps-se | devops-sre | done | — | rebuilt app, db untouched, /health /ready ok, no token in logs |
+
+## Ops (2026-10-29): CI + push
+
+| task | owner | status | risk IDs | notes |
+|---|---|---|---|---|
+| CI workflow (test + docker + helm jobs) | devops-sre | done | — | `.github/workflows/ci.yml`, Node 26, push/PR to main |
+| Prepare repo (README, .env.example, .gitignore) + secret scan | devops-sre | done | — | scan clean: no real secrets in tracked files |
+| Commit + push to origin/main | devops-sre | done | — | `153fae0` (98 files), push verified: `6bb7e2d..153fae0 main -> main` |
