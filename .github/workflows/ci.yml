@@ -16,8 +16,8 @@ jobs:
     name: typecheck + tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: npm
@@ -32,7 +32,7 @@ jobs:
     name: docker build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build image (no push)
         run: docker build -t telegram-threads-bot:ci .
 
@@ -40,9 +40,22 @@ jobs:
     name: helm lint + template
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
-      - name: Lint chart
-        run: helm lint helm/telegram-threads-bot
-      - name: Render templates
-        run: helm template telegram-threads-bot helm/telegram-threads-bot > /dev/null
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+        with:
+          # Pin for reproducible CI (matches the local verification version).
+          version: v4.3.1
+      - name: Lint chart (polling, CI values)
+        run: helm lint helm/telegram-threads-bot -f helm/telegram-threads-bot/ci/ci-values.yaml
+      - name: Render templates (polling)
+        run: helm template telegram-threads-bot helm/telegram-threads-bot -f helm/telegram-threads-bot/ci/ci-values.yaml > /dev/null
+      - name: Lint + render templates (webhook + ingress)
+        run: |
+          helm lint helm/telegram-threads-bot -f helm/telegram-threads-bot/ci/ci-values.yaml -f helm/telegram-threads-bot/ci/ci-values-webhook.yaml
+          helm template telegram-threads-bot helm/telegram-threads-bot -f helm/telegram-threads-bot/ci/ci-values.yaml -f helm/telegram-threads-bot/ci/ci-values-webhook.yaml > /dev/null
+      - name: Guard intact (empty adminIds must fail)
+        run: |
+          if helm template telegram-threads-bot helm/telegram-threads-bot > /dev/null 2>err.txt; then
+            echo "::error::chart no longer validates config.adminIds (production guard broken)"; exit 1
+          fi
+          grep -q "config.adminIds must list at least one admin id" err.txt

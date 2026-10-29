@@ -1,0 +1,9 @@
+# CI-only overlay on ci/ci-values.yaml: renders the webhook mode (D86) and
+# covers the remaining fail-fast guards (webhook.url, webhook.ingress.host).
+# Dummy, NON-SECRET values. NEVER use for deploys.
+mode: webhook
+webhook:
+  url: https://bot.ci.example.com/telegram/webhook
+  ingress:
+    enabled: true
+    host: bot.ci.example.com

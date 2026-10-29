@@ -1,0 +1,10 @@
+# CI-only render values (chart-testing `ci/*-values.yaml` convention).
+# Dummy, NON-SECRET values that satisfy every fail-fast guard in the chart so
+# `helm lint` / `helm template` can render it in CI. NEVER use for deploys.
+mode: polling
+# Placeholder name only; the Secret itself is created out of band (D14) and
+# holds the real BOT_TOKEN / DATABASE_URL.
+existingSecret: ci-placeholder-secret
+config:
+  # Dummy admin id — production must set real Telegram user ids (D14).
+  adminIds: "1"
