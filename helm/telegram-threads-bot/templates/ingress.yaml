@@ -1,0 +1,33 @@
+{{- if .Values.webhook.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "telegram-threads-bot.fullname" . }}
+  labels:
+    {{- include "telegram-threads-bot.labels" . | nindent 4 }}
+  {{- with .Values.webhook.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.webhook.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.webhook.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ required "webhook.ingress.host is required when ingress is enabled" .Values.webhook.ingress.host | quote }}
+      secretName: {{ .Values.webhook.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.webhook.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "telegram-threads-bot.fullname" . }}
+                port:
+                  name: http
+{{- end }}

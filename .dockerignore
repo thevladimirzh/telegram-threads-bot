@@ -1,0 +1,17 @@
+# Keep the build context minimal: the image needs only src/, migrations/,
+# drizzle.config.ts, tsconfig.json, package.json + package-lock.json.
+node_modules
+.git
+.github
+.vitest
+coverage
+*.tsbuildinfo
+docs
+tests
+helm
+*.md
+LICENSE
+.env
+.env.*
+Dockerfile
+.dockerignore

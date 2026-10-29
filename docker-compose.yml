@@ -1,0 +1,60 @@
+# VPS deployment (Docker Compose) — plan D14/D15/D85/D86.
+#
+# This file is for a single-VPS deploy (no Kubernetes/Helm there; helm/ is for
+# cluster installs). Usage on the server (/opt/telegram-threads-bot):
+#   1. put BOT_TOKEN / ADMIN_IDS / POSTGRES_* / DATABASE_URL into .env (chmod 600)
+#   2. docker compose build
+#   3. docker compose up -d db && wait for healthy
+#   4. docker compose run --rm --entrypoint npm app run db:migrate
+#   5. docker compose up -d
+#
+# Notes:
+# - The app container also receives POSTGRES_* via .env (harmless; the app only
+#   reads the Zod-validated set in src/config.ts: BOT_TOKEN, DATABASE_URL,
+#   ADMIN_IDS, MODE, PORT, WEBHOOK_URL/WEBHOOK_SECRET in webhook mode).
+# - db is NOT published to the host: only the app reaches it on the compose
+#   network. The app publishes 127.0.0.1:8080 for the local healthcheck/nginx.
+# - Memory limits fit a 2 GB box; log rotation caps disk usage.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build: .
+    image: telegram-threads-bot:latest
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:

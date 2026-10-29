@@ -1,0 +1,1 @@
+ALTER TABLE "drafts" ADD COLUMN "picked_authorized" integer;

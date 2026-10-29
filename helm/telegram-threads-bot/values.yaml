@@ -1,0 +1,102 @@
+# Default values for telegram-threads-bot (D14/D15/D86).
+
+# Keep 1 replica by default: the bot performs ordered, batched update handling
+# (transfer of a message batch, delete batches <= 100) and in polling mode a
+# single consumer must own long-polling `getUpdates`. Scale out only with an
+# external update dispatcher (out of scope for v1).
+replicaCount: 1
+
+image:
+  repository: telegram-threads-bot
+  # Defaults to .Chart.AppVersion when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Run mode (D15): "polling" (default) or "webhook".
+mode: polling
+
+webhook:
+  # Required when mode=webhook: the public HTTPS URL Telegram posts updates to.
+  url: ""
+  # Key inside `existingSecret` that holds the X-Telegram-Bot-Api-Secret-Token
+  # value (D86). The webhook secret comes from the same secret as
+  # BOT_TOKEN / DATABASE_URL — never from values.
+  secretKey: WEBHOOK_SECRET
+  ingress:
+    enabled: false
+    className: ""
+    host: ""
+    annotations: {}
+    tls:
+      enabled: true
+      secretName: telegram-threads-bot-tls
+
+# Existing Kubernetes Secret (created out of band) with keys:
+#   BOT_TOKEN, DATABASE_URL
+# and, when mode=webhook, the key named in webhook.secretKey.
+existingSecret: telegram-threads-bot-secrets
+
+# Non-secret runtime configuration (src/config.ts).
+config:
+  # Comma-separated Telegram user ids of bot admins (required, non-empty).
+  adminIds: ""
+  draftTimeoutMs: "900000"
+  batchLimit: "50"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Probes hit the health HTTP server (src/health.ts) on the container port.
+containerPort: 8080
+
+livenessProbe:
+  path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  path: /ready
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+migration:
+  # Pre-install/pre-upgrade hook Job running `npm run db:migrate` (D14).
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 250m
+      memory: 192Mi
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

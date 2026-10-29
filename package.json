@@ -1,0 +1,36 @@
+{
+  "name": "telegram-threads-bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Telegram bot that moves a discussion from a main chat into a threads chat as a named reply thread",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@lingui/core": "^6.10.1",
+    "@lingui/message-utils": "^6.10.1",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
+    "grammy": "^1.46.0",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "fast-check": "^4.10.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

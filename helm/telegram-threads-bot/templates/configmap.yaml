@@ -1,0 +1,24 @@
+{{- if not (or (eq .Values.mode "polling") (eq .Values.mode "webhook")) }}
+{{- fail "values.mode must be \"polling\" or \"webhook\"" }}
+{{- end }}
+{{- if and (eq .Values.mode "webhook") (not .Values.webhook.url) }}
+{{- fail "values.webhook.url is required when mode=webhook (D86)" }}
+{{- end }}
+{{- if not .Values.existingSecret }}
+{{- fail "values.existingSecret must name a Secret with BOT_TOKEN and DATABASE_URL (D14)" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "telegram-threads-bot.fullname" . }}
+  labels:
+    {{- include "telegram-threads-bot.labels" . | nindent 4 }}
+data:
+  MODE: {{ .Values.mode | quote }}
+  PORT: {{ .Values.containerPort | quote }}
+  ADMIN_IDS: {{ required "config.adminIds must list at least one admin id" .Values.config.adminIds | quote }}
+  DRAFT_TIMEOUT_MS: {{ .Values.config.draftTimeoutMs | quote }}
+  BATCH_LIMIT: {{ .Values.config.batchLimit | quote }}
+  {{- if and (eq .Values.mode "webhook") .Values.webhook.url }}
+  WEBHOOK_URL: {{ .Values.webhook.url | quote }}
+  {{- end }}

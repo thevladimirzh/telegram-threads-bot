@@ -1,0 +1,28 @@
+telegram-threads-bot {{ .Chart.AppVersion }} deployed (mode: {{ .Values.mode }}).
+
+1. The chart expects an existing Secret "{{ .Values.existingSecret }}" with keys:
+   - BOT_TOKEN       — Telegram bot token
+   - DATABASE_URL    — postgresql:// connection string
+   {{- if eq .Values.mode "webhook" }}
+   - {{ .Values.webhook.secretKey }} — X-Telegram-Bot-Api-Secret-Token value (D86)
+   {{- end }}
+   Create it before install/upgrade:
+   kubectl create secret generic {{ .Values.existingSecret }} \
+     --from-literal=BOT_TOKEN=... --from-literal=DATABASE_URL=...
+
+2. A pre-install/pre-upgrade Job runs database migrations (npm run db:migrate).
+
+3. Health endpoints: /health (liveness) and /ready (readiness) on port {{ .Values.service.port }}.
+{{- if eq .Values.mode "webhook" }}
+
+4. Webhook mode: Telegram posts updates to {{ .Values.webhook.url }}.
+   {{- if .Values.webhook.ingress.enabled }}
+   Ingress host: {{ .Values.webhook.ingress.host }} (TLS {{ if .Values.webhook.ingress.tls.enabled }}on{{ else }}off{{ end }}).
+   {{- else }}
+   Expose the service yourself (Ingress is disabled).
+   {{- end }}
+{{- else }}
+
+4. Polling mode: the bot long-polls Telegram. Keep replicaCount=1
+   (ordered update handling — see values.yaml).
+{{- end }}
